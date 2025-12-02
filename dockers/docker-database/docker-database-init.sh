@@ -82,13 +82,13 @@ if [[ $DATABASE_TYPE == "chassisdb" ]]; then
     VAR_LIB_REDIS_CHASSIS_DIR="/var/lib/redis_chassis"
     mkdir -p $VAR_LIB_REDIS_CHASSIS_DIR   
     update_chassisdb_config -j $db_cfg_file_tmp -k -p $chassis_db_port
-    # generate all redis server supervisord configuration file
+    # generate all valkey server supervisord configuration file
     sonic-cfggen -j $db_cfg_file_tmp \
     -t /usr/share/sonic/templates/supervisord.conf.j2,/etc/supervisor/conf.d/supervisord.conf \
     -t /usr/share/sonic/templates/critical_processes.j2,/etc/supervisor/critical_processes
     rm $db_cfg_file_tmp
-    chown -R redis:redis $VAR_LIB_REDIS_CHASSIS_DIR
-    chown -R redis:redis $REDIS_DIR
+    chown -R valkey:valkey $VAR_LIB_REDIS_CHASSIS_DIR
+    chown -R valkey:valkey $REDIS_DIR
     exec /usr/local/bin/supervisord
     exit 0
 fi
@@ -129,12 +129,12 @@ do
     else
         echo -n > /var/lib/$inst/dump.rdb
     fi
-    # the Redis process is operating under the 'redis' user in supervisord and make redis user own /var/lib/$inst inside db container.
-    chown -R redis:redis /var/lib/$inst
+    # the Valkey process is operating under the 'valkey' user in supervisord and make valkey user own /var/lib/$inst inside db container.
+    chown -R valkey:valkey /var/lib/$inst
 done
 
-chown -R redis:redis $REDIS_DIR
+chown -R valkey:valkey $REDIS_DIR
 REDIS_BMP_DIR="/var/lib/redis_bmp"
-chown -R redis:redis $REDIS_BMP_DIR
+chown -R valkey:valkey $REDIS_BMP_DIR
 
 exec /usr/local/bin/supervisord
