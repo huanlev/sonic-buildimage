@@ -326,3 +326,8 @@ SONIC_PTF_ENV_PY_VER = py3
 
 # Add timeout on some process which may hangs
 BUILD_PROCESS_TIMEOUT ?= 0
+
+# Clang Static Analyzer configuration
+ENABLE_CLANG_SA ?= n
+CLANG_SA_CHECKERS ?= core,deadcode.DeadStores,security.insecureAPI.UncheckedReturn
+CLANG_SA_OUTPUT_DIR ?= $(TARGET_PATH)/clang-sa-reports
