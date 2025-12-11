@@ -1,0 +1,71 @@
+name: "Clang Static Analysis"
+
+on:
+  push:
+    branches:
+      - 'master'
+      - '202[0-9][0-9][0-9]'
+  pull_request:
+    branches:
+      - 'master'
+      - '202[0-9][0-9][0-9]'
+
+jobs:
+  clang-sa:
+    if: github.repository_owner == 'sonic-net'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    
+    - name: Setup build environment
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang clang-analyzer build-essential
+    
+    - name: Configure build
+      run: |
+        make SONIC_BUILD_JOBS=$(nproc) ENABLE_CLANG_SA=y configure PLATFORM=generic
+    
+    - name: Run Clang Static Analyzer
+      run: |
+        make clang-sa
+    
+    - name: Upload analysis results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: clang-sa-reports
+        path: target/clang-sa-reports/
+
+    - name: Summarize findings
+      if: github.event_name == 'pull_request'
+      run: |
+        if [ -d "target/clang-sa-reports" ]; then
+          echo "## Clang Static Analysis Results" > pr_comment.md
+          echo "" >> pr_comment.md
+          for report in target/clang-sa-reports/*/index.html; do
+            if [ -f "$report" ]; then
+              echo "### Analysis Report" >> pr_comment.md
+              echo "Report available in workflow artifacts" >> pr_comment.md
+            fi
+          done
+        fi
+    
+    - name: Comment on PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          if (fs.existsSync('pr_comment.md')) {
+            const comment = fs.readFileSync('pr_comment.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          }
